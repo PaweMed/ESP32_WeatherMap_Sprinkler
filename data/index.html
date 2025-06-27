@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>WeatherMap Sprinkler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap & ikony -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #f7f9fb; }
+    .zone-on { background: #63c77b !important; color: white !important; }
+    .zone-off { background: #e4e7ea !important; color: #333 !important; }
+    .zone-btn { min-width: 90px; min-height: 55px; font-size: 1.2em; }
+    .main-title { font-family: 'Segoe UI', sans-serif; letter-spacing: 2px; }
+    .navbar-brand { font-size: 1.5rem; font-weight: 500; }
+    .status-tile { border-radius: 1rem; padding: 1.2em 1.5em; box-shadow: 0 0.2em 1em #0001; background: #fff; min-height: 106px;}
+    .prog-item { background: #f9f9fa; border-radius: .5rem; margin-bottom: 1em; }
+    .rain-icon { color: #1d8af1; font-size: 2.2em; vertical-align: middle;}
+    .settings-label { font-weight: 500; }
+    .pointer { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-droplet-half"></i> WeatherMap Sprinkler
+      </a>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link tab-link active" href="#zones">Strefy</a></li>
+        <li class="nav-item"><a class="nav-link tab-link" href="#programs">Harmonogramy</a></li>
+        <li class="nav-item"><a class="nav-link tab-link" href="#weather">Pogoda</a></li>
+        <li class="nav-item"><a class="nav-link tab-link" href="#logs">Logi</a></li>
+        <li class="nav-item"><a class="nav-link tab-link" href="#settings">Ustawienia</a></li>
+      </ul>
+    </div>
+  </nav>
+  <main class="container py-4">
+
+    <!-- Status systemu -->
+    <div class="row mb-4">
+      <div class="col-12 col-md-6 mb-3 mb-md-0">
+        <div class="status-tile d-flex flex-row align-items-center">
+          <i class="bi bi-wifi" id="wifi-icon" style="font-size: 2.5em; margin-right: 1.5em; color:#1d8af1;"></i>
+          <div>
+            <div class="fs-5 mb-1">Status sieci: <span id="wifi-status" class="fw-bold text-success">Łączę...</span></div>
+            <div class="text-muted small">IP: <span id="ip-addr">---</span></div>
+            <div class="small text-muted">Czas: <span id="time-now"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="status-tile">
+          <span class="fw-bold">Deszcz (ostatnia godz.): </span>
+          <i class="bi bi-cloud-rain-heavy rain-icon"></i>
+          <span id="rain-amount">---</span> mm,
+          <span class="fw-bold">Wilgotność:</span> <span id="humidity">---</span> %
+          <span class="fw-bold ms-4">Temp:</span> <span id="temperature">---</span>°C
+        </div>
+      </div>
+    </div>
+
+    <!-- STREFY -->
+    <section id="zones" class="tab-section mb-5">
+      <h3><i class="bi bi-diagram-3"></i> Strefy</h3>
+      <div class="row" id="zone-buttons">
+        <!-- Strefy ładowane dynamicznie -->
+      </div>
+    </section>
+
+    <!-- PROGRAMY/HARMONOGRAMY -->
+    <section id="programs" class="tab-section mb-5" style="display:none">
+      <h3><i class="bi bi-calendar-week"></i> Harmonogramy</h3>
+      <div id="program-list">
+        <!-- Programy ładowane dynamicznie -->
+      </div>
+      <button class="btn btn-primary mt-2" onclick="showAddProgramModal()"><i class="bi bi-plus-lg"></i> Dodaj harmonogram</button>
+    </section>
+
+    <!-- POGODA -->
+    <section id="weather" class="tab-section mb-5" style="display:none">
+      <h3><i class="bi bi-cloud-sun"></i> Pogoda</h3>
+      <div class="row g-4">
+        <div class="col-md-3">
+          <div class="status-tile text-center">
+            <i class="bi bi-thermometer-half" style="font-size:2em;"></i>
+            <div class="fs-3" id="weather-temp">---</div>
+            <div class="small text-muted">Temperatura [°C]</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="status-tile text-center">
+            <i class="bi bi-droplet" style="font-size:2em;"></i>
+            <div class="fs-3" id="weather-humidity">---</div>
+            <div class="small text-muted">Wilgotność [%]</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="status-tile text-center">
+            <i class="bi bi-cloud-rain-heavy" style="font-size:2em;"></i>
+            <div class="fs-3" id="weather-rain">---</div>
+            <div class="small text-muted">Deszcz (1h) [mm]</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="status-tile text-center">
+            <i class="bi bi-wind" style="font-size:2em;"></i>
+            <div class="fs-3" id="weather-wind">---</div>
+            <div class="small text-muted">Wiatr [m/s]</div>
+          </div>
+        </div>
+      </div>
+      <!-- Komunikat o prognozie i statusie podlewania -->
+      <div id="prog-watering-info" class="alert alert-info mt-4" style="display:none"></div>
+    </section>
+
+    <!-- LOGI -->
+    <section id="logs" class="tab-section mb-5" style="display:none">
+      <h3><i class="bi bi-clipboard-data"></i> Logi</h3>
+      <div class="status-tile" style="min-height: 120px;">
+        <pre id="log-box" style="background: #f3f5f8; border-radius: .5em; padding: .5em 1em; font-size:1em; max-height:220px; overflow-y:auto;"></pre>
+        <button class="btn btn-outline-danger btn-sm mt-2" onclick="clearLogs()"><i class="bi bi-trash"></i> Wyczyść logi</button>
+      </div>
+    </section>
+
+    <!-- USTAWIENIA -->
+    <section id="settings" class="tab-section mb-5" style="display:none">
+      <h3><i class="bi bi-gear"></i> Ustawienia</h3>
+      <form id="settings-form" class="row g-3 col-md-8">
+        <div class="col-md-6">
+          <label class="settings-label">SSID WiFi</label>
+          <input class="form-control" type="text" id="ssid" required>
+        </div>
+        <div class="col-md-6">
+          <label class="settings-label">Hasło WiFi</label>
+          <input class="form-control" type="password" id="pass" required>
+        </div>
+        <div class="col-md-6">
+          <label class="settings-label">Klucz API OpenWeatherMap</label>
+          <input class="form-control" type="text" id="owmApiKey" required>
+        </div>
+        <div class="col-md-6">
+          <label class="settings-label">Lokalizacja (np. Warsaw,PL)</label>
+          <input class="form-control" type="text" id="owmLocation" required>
+        </div>
+        <div class="col-md-6">
+          <label class="settings-label">Pushover User Key</label>
+          <input class="form-control" type="text" id="pushoverUser">
+        </div>
+        <div class="col-md-6">
+          <label class="settings-label">Pushover API Token</label>
+          <input class="form-control" type="text" id="pushoverToken">
+        </div>
+        <!-- MQTT USTAWIENIA -->
+        <div class="col-12"><hr></div>
+        <h5 class="mb-3 mt-0"><i class="bi bi-broadcast-pin"></i> MQTT (Home Assistant)</h5>
+        <div class="col-md-4">
+          <label class="settings-label">MQTT broker (host/IP)</label>
+          <input class="form-control" type="text" id="mqttServer">
+        </div>
+        <div class="col-md-2">
+          <label class="settings-label">Port</label>
+          <input class="form-control" type="number" id="mqttPort" min="1" max="65535">
+        </div>
+        <div class="col-md-3">
+          <label class="settings-label">Login</label>
+          <input class="form-control" type="text" id="mqttUser">
+        </div>
+        <div class="col-md-3">
+          <label class="settings-label">Hasło</label>
+          <input class="form-control" type="password" id="mqttPass">
+        </div>
+        <div class="col-md-6">
+          <label class="settings-label">MQTT Client ID</label>
+          <input class="form-control" type="text" id="mqttClientId" placeholder="opcjonalnie">
+        </div>
+        <div class="col-12 mt-3">
+          <button type="submit" class="btn btn-success">Zapisz ustawienia</button>
+          <span id="settings-msg" class="ms-3"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- MODAL dodawania/edycji programu -->
+  <div class="modal fade" id="programModal" tabindex="-1" aria-labelledby="programModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="program-form">
+        <div class="modal-header">
+          <h5 class="modal-title" id="programModalLabel">Dodaj harmonogram</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <label>Strefa</label>
+            <select class="form-select" id="prog-zone" required></select>
+          </div>
+          <div class="mb-2">
+            <label>Godzina rozpoczęcia</label>
+            <input type="time" class="form-control" id="prog-time" required>
+          </div>
+          <div class="mb-2">
+            <label>Czas trwania [min]</label>
+            <input type="number" class="form-control" id="prog-duration" min="1" max="180" required>
+          </div>
+          <div class="mb-2">
+            <label>Dni tygodnia</label>
+            <div class="btn-group w-100" role="group" id="prog-days">
+              <!-- przyciski dni tygodnia -->
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Anuluj</button>
+          <button class="btn btn-primary" type="submit">Zapisz</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bootstrap & JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Zakładki - przełączanie sekcji + przeładowanie danych sekcji po kliknięciu
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.tab-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          document.querySelectorAll('.tab-link').forEach(a=>a.classList.remove('active'));
+          this.classList.add('active');
+          document.querySelectorAll('.tab-section').forEach(sec=>sec.style.display='none');
+          const secId = this.getAttribute('href').replace('#','');
+          document.getElementById(secId).style.display = '';
+          // Załaduj dane do wybranej sekcji
+          if(secId === "zones") loadZones();
+          if(secId === "programs") loadPrograms();
+          if(secId === "weather") loadWeather();
+          if(secId === "logs") loadLogs();
+          if(secId === "settings") loadSettings();
+        });
+      });
+      // Po starcie pokaż tylko Strefy
+      document.querySelectorAll('.tab-section').forEach(sec=>sec.style.display='none');
+      document.getElementById('zones').style.display = '';
+      // Automatyczne ładowanie statusów i danych
+      loadStatus();
+      loadZones();
+      loadPrograms();
+      loadWeather();
+      loadLogs();
+      loadSettings();
+      setInterval(loadStatus, 30000);
+      setInterval(loadWeather, 60000);
+      setInterval(loadLogs, 60000);
+    });
+
+    // Helpers do AJAX
+    function api(url, method = 'GET', body = null) {
+      return fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : null
+      }).then(r => r.json());
+    }
+
+    function loadStatus() {
+      api('/api/status').then(d => {
+        document.getElementById('wifi-status').innerText = d.wifi;
+        document.getElementById('ip-addr').innerText = d.ip;
+        document.getElementById('time-now').innerText = d.time;
+      });
+    }
+    function loadZones() {
+      api('/api/zones').then(zones => {
+        let html = '';
+        zones.forEach((z, idx) => {
+          html += `
+            <div class="col-6 col-md-3 mb-3">
+              <button class="zone-btn btn ${z.active ? 'zone-on' : 'zone-off'} w-100"
+                onclick="toggleZone(${idx})">
+                <i class="bi bi-valve"></i> Strefa ${idx+1}<br>
+                <span class="fw-bold">${z.active ? 'Aktywna' : 'Wyłączona'}</span>
+              </button>
+            </div>`;
+        });
+        document.getElementById('zone-buttons').innerHTML = html;
+      });
+    }
+    function toggleZone(idx) {
+      api('/api/zone/' + idx, 'POST', { toggle: true }).then(loadZones);
+    }
+
+    function loadPrograms() {
+      api('/api/programs').then(programs => {
+        let html = '';
+        programs.forEach((p, idx) => {
+          html += `
+            <div class="prog-item p-3 d-flex align-items-center justify-content-between">
+              <div>
+                <b>Strefa ${p.zone+1}</b> o ${p.time} (${p.duration} min), dni: ${p.days}
+              </div>
+              <div>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteProgram(${idx})">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>`;
+        });
+        document.getElementById('program-list').innerHTML = html;
+      });
+    }
+    function showAddProgramModal() {
+      let modal = new bootstrap.Modal(document.getElementById('programModal'));
+      let zoneSel = document.getElementById('prog-zone');
+      zoneSel.innerHTML = '';
+      for(let i=1;i<=8;i++) {
+        zoneSel.innerHTML += `<option value="${i-1}">Strefa ${i}</option>`;
+      }
+      // Dni tygodnia
+      let days = ['Pn','Wt','Śr','Cz','Pt','Sb','Nd'];
+      let btns = '';
+      for(let i=0;i<7;i++)
+        btns += `<button type="button" class="btn btn-outline-primary" id="daybtn${i}" onclick="toggleDay(this,${i})">${days[i]}</button>`;
+      document.getElementById('prog-days').innerHTML = btns;
+      document.getElementById('prog-time').value = '';
+      document.getElementById('prog-duration').value = 10;
+      modal.show();
+    }
+    let progDays = [0,0,0,0,0,0,0];
+    function toggleDay(btn, idx) {
+      progDays[idx] = 1 - progDays[idx];
+      btn.classList.toggle('btn-primary');
+      btn.classList.toggle('btn-outline-primary');
+    }
+    document.getElementById('program-form').onsubmit = function(e) {
+      e.preventDefault();
+      let days = progDays.map((v,i) => v ? i : null).filter(v=>v!==null);
+      api('/api/programs', 'POST', {
+        zone: parseInt(document.getElementById('prog-zone').value),
+        time: document.getElementById('prog-time').value,
+        duration: parseInt(document.getElementById('prog-duration').value),
+        days: days
+      }).then(() => {
+        loadPrograms();
+        bootstrap.Modal.getInstance(document.getElementById('programModal')).hide();
+      });
+    };
+    function deleteProgram(idx) {
+      api('/api/programs/' + idx, 'DELETE').then(loadPrograms);
+    }
+
+    function loadWeather() {
+      api('/api/weather').then(w => {
+        document.getElementById('rain-amount').innerText = w.rain;
+        document.getElementById('humidity').innerText = w.humidity;
+        document.getElementById('temperature').innerText = w.temp;
+        document.getElementById('weather-temp').innerText = w.temp;
+        document.getElementById('weather-humidity').innerText = w.humidity;
+        document.getElementById('weather-rain').innerText = w.rain;
+        document.getElementById('weather-wind').innerText = w.wind;
+
+        // KOMUNIKAT O PODLEWANIU NA PODSTAWIE PROGNOZY
+        const msg = document.getElementById('prog-watering-info');
+        if (w.watering_percent === 0) {
+          msg.innerText = "Podlewanie dziś odwołane ze względu na prognozowane opady";
+          msg.className = "alert alert-danger mt-4";
+          msg.style.display = "";
+        } else if (w.watering_percent === 50) {
+          msg.innerText = "Podlewanie zostanie skrócone do 50% czasu (prognozowane umiarkowane opady)";
+          msg.className = "alert alert-warning mt-4";
+          msg.style.display = "";
+        } else {
+          msg.innerText = "";
+          msg.style.display = "none";
+        }
+      });
+    }
+
+    function loadLogs() {
+      api('/api/logs').then(d => {
+        document.getElementById('log-box').innerText = d.logs.join('\n');
+      });
+    }
+    function clearLogs() {
+      api('/api/logs', 'DELETE').then(loadLogs);
+    }
+
+    function loadSettings() {
+      api('/api/settings').then(s => {
+        document.getElementById('ssid').value = s.ssid || '';
+        document.getElementById('pass').value = s.pass || '';
+        document.getElementById('owmApiKey').value = s.owmApiKey || '';
+        document.getElementById('owmLocation').value = s.owmLocation || '';
+        document.getElementById('pushoverUser').value = s.pushoverUser || '';
+        document.getElementById('pushoverToken').value = s.pushoverToken || '';
+        // MQTT
+        document.getElementById('mqttServer').value = s.mqttServer || '';
+        document.getElementById('mqttPort').value = s.mqttPort || 1883;
+        document.getElementById('mqttUser').value = s.mqttUser || '';
+        document.getElementById('mqttPass').value = s.mqttPass || '';
+        document.getElementById('mqttClientId').value = s.mqttClientId || '';
+      });
+      document.getElementById('settings-msg').textContent = "";
+    }
+    document.getElementById('settings-form').onsubmit = function(e) {
+      e.preventDefault();
+      let msg = document.getElementById('settings-msg');
+      msg.textContent = "Zapisywanie...";
+      api('/api/settings', 'POST', {
+        ssid: document.getElementById('ssid').value,
+        pass: document.getElementById('pass').value,
+        owmApiKey: document.getElementById('owmApiKey').value,
+        owmLocation: document.getElementById('owmLocation').value,
+        pushoverUser: document.getElementById('pushoverUser').value,
+        pushoverToken: document.getElementById('pushoverToken').value,
+        // MQTT
+        mqttServer: document.getElementById('mqttServer').value,
+        mqttPort: parseInt(document.getElementById('mqttPort').value),
+        mqttUser: document.getElementById('mqttUser').value,
+        mqttPass: document.getElementById('mqttPass').value,
+        mqttClientId: document.getElementById('mqttClientId').value
+      }).then(() => {
+        msg.textContent = "Ustawienia zapisane! Jeśli zmieniłeś MQTT, zostanie ono przeładowane.";
+      });
+    }
+  </script>
+</body>
+</html>
