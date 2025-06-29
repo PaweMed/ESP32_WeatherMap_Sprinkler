@@ -1,0 +1,39 @@
+<section id="programs" class="tab-section mb-5">
+  <h3><i class="bi bi-calendar-week"></i> Harmonogramy</h3>
+  <form id="program-add-form" class="row g-2 align-items-end mb-4">
+    <div class="col-auto">
+      <label>Strefa</label>
+      <select id="prog-zone" class="form-select">
+        <option value="0">1</option><option value="1">2</option>
+        <option value="2">3</option><option value="3">4</option>
+        <option value="4">5</option><option value="5">6</option>
+        <option value="6">7</option><option value="7">8</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <label>Godzina</label>
+      <input type="time" class="form-control" id="prog-time" required>
+    </div>
+    <div class="col-auto">
+      <label>Czas (min)</label>
+      <input type="number" class="form-control" id="prog-duration" min="1" max="120" value="10" required>
+    </div>
+    <div class="col-auto">
+      <label>Dni tygodnia</label>
+<div id="prog-days-btns" class="btn-group" role="group" aria-label="Dni tygodnia">
+  <button type="button" class="btn btn-outline-secondary" data-day="1">Pn</button>
+  <button type="button" class="btn btn-outline-secondary" data-day="2">Wt</button>
+  <button type="button" class="btn btn-outline-secondary" data-day="3">Śr</button>
+  <button type="button" class="btn btn-outline-secondary" data-day="4">Cz</button>
+  <button type="button" class="btn btn-outline-secondary" data-day="5">Pt</button>
+  <button type="button" class="btn btn-outline-secondary" data-day="6">Sb</button>
+  <button type="button" class="btn btn-outline-secondary" data-day="0">Nd</button>
+</div>
+      <input type="hidden" id="prog-days" value="">
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-success">Dodaj</button>
+    </div>
+  </form>
+  <div id="program-list"></div>
+</section>
