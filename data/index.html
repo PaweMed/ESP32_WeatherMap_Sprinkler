@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>WeatherMap Sprinkler</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3498db;
+      --secondary: #2ecc71;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --dark: #2c3e50;
+      --light: #ecf0f1;
+    }
+    body { background: #f7f9fb; }
+    .custom-navbar {
+      background: linear-gradient(135deg, var(--primary), var(--dark));
+      color: white !important;
+      box-shadow: 0 2px 10px #0002;
+    }
+    .custom-navbar .navbar-brand,
+    .custom-navbar .nav-link {
+      color: #fff !important;
+      text-shadow: 0 1px 4px #0003;
+      transition: color 0.2s;
+    }
+    .custom-navbar .nav-link.active {
+      font-weight: bold;
+      border-bottom: 2px solid var(--light);
+    }
+    .custom-navbar .nav-link:hover,
+    .custom-navbar .nav-link:focus {
+      color: var(--secondary) !important;
+    }
+    .zone-on { background: #63c77b !important; color: white !important; }
+    .zone-off { background: #e4e7ea !important; color: #333 !important; }
+    .zone-btn { min-width: 90px; min-height: 55px; font-size: 1.2em; overflow: hidden; position: relative; }
+    .zone-name { display: block; width: 100%; text-overflow: ellipsis; overflow: hidden; line-height: 1.2; }
+    .main-title { font-family: 'Segoe UI', sans-serif; letter-spacing: 2px; }
+    .navbar-brand { font-size: 1.5rem; font-weight: 500; }
+    .status-tile {
+      border-radius: 1rem;
+      padding: 1.2em 1.5em;
+      box-shadow: 0 0.2em 1em #0001;
+      background: #fff;
+      min-height: 114px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+    .rain-icon { color: #1d8af1; font-size: 2.2em; vertical-align: middle;}
+    .pointer { cursor: pointer; }
+    #prog-days-btns .active { background: #1d8af1 !important; color: #fff !important; }
+    .zone-timer-badge {
+      position: absolute;
+      left: 0.5em;
+      top: 0.5em;
+      z-index: 2;
+      border-radius: 0.8em 0.8em 0.8em 0.2em;
+      padding: 0.23em 0.7em;
+      font-size: 0.8em;
+      font-weight: 600;
+      box-shadow: 0 4px 24px #1782db55, 0 1.5px 8px #0b254055;
+      background: #1471c8 !important;
+      color: #fff !important;
+      letter-spacing: 0.03em;
+      user-select: none;
+      pointer-events: none;
+      opacity: 0.93;
+      min-width: 5.7em;
+      text-align: center;
+      display: inline-block;
+      white-space: nowrap;
+      transition: background 0.3s, box-shadow 0.3s, opacity 0.3s;
+    }
+    .zone-timer-finished-badge {
+      background: #b4b4b4 !important;
+      color: #fff !important;
+      box-shadow: 0 4px 24px #aaa4, 0 1.5px 8px #0002;
+      opacity: 0.74;
+      transition: background 0.3s, box-shadow 0.3s, opacity 0.3s;
+    }
+    .zone-edit-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      cursor: pointer;
+      gap: 0.5em;
+      font-size: 1.2em;
+      font-weight: 500;
+      color: #0d6efd;
+      user-select: none;
+      margin-bottom: 1em;
+      margin-left: 0.5em;
+      margin-right: 0.2em;
+    }
+    .zone-edit-bar.editing { color: #f43f3f; }
+    .zone-edit-icon { font-size: 1.2em; }
+    .zone-editing .zone-btn { pointer-events: none; opacity: 0.7; }
+    .zone-editing .zone-edit-input {
+      width: 100%;
+      border: 1px solid #aaa;
+      border-radius: 0.4em;
+      font-size: 1em;
+      text-align: center;
+      padding: 0 3px;
+      outline: none;
+      margin-bottom: 3px;
+      margin-top: 2px;
+    }
+    .navbar-drop {
+      height: 1.9em;
+      width: auto;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 0.3em;
+      margin-top: -0.15em;
+      filter: drop-shadow(0 1px 3px #0002);
+    }
+  </style>
+</head>
+<body>
+  <!-- Gradientowy navbar -->
+  <nav class="navbar navbar-expand-md custom-navbar">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <img src="/favicon.png" alt="Kropla" class="navbar-drop" style="height: 1.5em; vertical-align: middle; margin-right: 0.25em;">
+        WeatherMap Sprinkler
+      </a>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link tab-link active" data-section="zones" href="#">Strefy</a></li>
+        <li class="nav-item"><a class="nav-link tab-link" data-section="programs" href="#">Harmonogramy</a></li>
+        <li class="nav-item"><a class="nav-link tab-link" data-section="weather" href="#">Pogoda</a></li>
+        <li class="nav-item"><a class="nav-link tab-link" data-section="logs" href="#">Logi</a></li>
+        <li class="nav-item"><a class="nav-link tab-link" data-section="settings" href="#">Ustawienia</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <div class="row mb-4">
+      <div class="col-12 col-md-6 mb-3 mb-md-0">
+        <div class="status-tile d-flex flex-row align-items-center">
+          <i class="bi bi-wifi" id="wifi-icon" style="font-size: 2.5em; margin-right: 1.5em; color:#1d8af1;"></i>
+          <div>
+            <div class="fs-5 mb-1">Status sieci: <span id="wifi-status" class="fw-bold text-success">Łączę...</span></div>
+            <div class="text-muted small">IP: <span id="ip-addr">---</span></div>
+            <div class="small text-muted">Czas: <span id="time-now"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="status-tile">
+          <span class="fw-bold">Deszcz (ostatnia godz.): </span>
+          <i class="bi bi-cloud-rain-heavy rain-icon"></i>
+          <span id="rain-amount">---</span> mm,
+          <span class="fw-bold">Wilgotność:</span> <span id="humidity">---</span> %
+          <span class="fw-bold ms-4">Temp:</span> <span id="temperature">---</span>°C
+        </div>
+      </div>
+    </div>
+    <main id="main-content"></main>
+  </div>
+
+  <div class="modal" tabindex="-1" id="otaModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Aktualizacja firmware (OTA)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="ota-upload-form">
+            <div class="mb-3">
+              <label class="form-label">Login</label>
+              <input type="text" class="form-control" id="ota-login" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Hasło</label>
+              <input type="password" class="form-control" id="ota-pass" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Plik firmware (.bin)</label>
+              <input type="file" class="form-control" id="ota-file" accept=".bin" required>
+            </div>
+            <div id="ota-msg" class="mb-2"></div>
+            <button type="submit" class="btn btn-success">Wgraj</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function api(url, method = 'GET', body = null) {
+      return fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : null
+      }).then(r => r.json());
+    }
+
+    let zoneCountdownIntervals = [];
+    let zoneNames = [];
+    let zoneEditMode = false;
+    let zonesData = [];
+    let lastZoneStates = [];
+
+    // -------- CYKLICZNE ODŚWIEŻANIE WSZYSTKICH SEKCJI --------
+    let lastSection = "zones";
+    let sectionTimers = {};
+
+    function startSectionAutoRefresh(section) {
+      Object.values(sectionTimers).forEach(clearInterval);
+      sectionTimers = {};
+      lastSection = section;
+      if (section === "zones") {
+        afterLoad_zones();
+        sectionTimers.zones = setInterval(() => {
+          if (!zoneEditMode) { // <<< PATCH: NIE ODŚWIERZAJ podczas edycji nazw!
+            afterLoad_zones();
+          }
+        }, 2000);
+      }
+      if (section === "logs") {
+        afterLoad_logs();
+        sectionTimers.logs = setInterval(afterLoad_logs, 5000);
+      }
+      if (section === "weather") {
+        afterLoad_weather();
+        sectionTimers.weather = setInterval(afterLoad_weather, 10000);
+      }
+      if (section === "settings") {
+        afterLoad_settings();
+      }
+      if (section === "programs") {
+        afterLoad_programs();
+        // NIE ustawiaj cyklicznego odświeżania sekcji "programs"!
+      }
+    }
+    setInterval(loadStatus, 4000);
+    setInterval(loadWeatherMini, 4000);
+
+    // --------------------------------------------------------
+
+    function fetchZoneNames() {
+      return api('/api/zones-names').then(data => {
+        zoneNames = data.names || [];
+      }).catch(() => { zoneNames = []; });
+    }
+    function saveZoneNames() {
+      return api('/api/zones-names', 'POST', { names: zoneNames });
+    }
+    function setFontSizeToFit(el) {
+      let fontSize = 1.2;
+      el.style.fontSize = fontSize + 'em';
+      el.style.whiteSpace = "nowrap";
+      if (!el.offsetWidth) return;
+      while (el.scrollWidth > el.offsetWidth && fontSize > 0.6) {
+        fontSize -= 0.05;
+        el.style.fontSize = fontSize + 'em';
+      }
+    }
+    function enableZoneEditMode(zones) {
+      zoneEditMode = true;
+      zones.forEach(z => {
+        if (z.active) {
+          api('/api/zones', 'POST', { id: z.id, toggle: true });
+        }
+      });
+      afterLoad_zones();
+    }
+    function disableZoneEditMode() {
+      zoneEditMode = false;
+      document.querySelectorAll('.zone-edit-input').forEach((input, idx) => {
+        zoneNames[idx] = input.value.trim() || `Strefa ${idx+1}`;
+      });
+      saveZoneNames().then(() => {
+        afterLoad_zones();
+      });
+    }
+    function toggleZoneEditBar(zones) {
+      if (!zoneEditMode) {
+        enableZoneEditMode(zones);
+      } else {
+        disableZoneEditMode();
+      }
+    }
+    function afterLoad_zones() {
+      zoneCountdownIntervals.forEach(i => clearInterval(i));
+      zoneCountdownIntervals = [];
+      Promise.all([
+        api('/api/zones'),
+        fetchZoneNames()
+      ]).then(([zones]) => {
+        zonesData = zones;
+        let html = `
+          <section id="zones" class="tab-section mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h3 class="mb-0"><i class="bi bi-diagram-3"></i> Strefy</h3>
+              <div class="zone-edit-bar${zoneEditMode ? ' editing' : ''}" onclick="toggleZoneEditBar(zonesData)">
+                <i class="bi bi-pencil-square zone-edit-icon"></i>
+                <span>${zoneEditMode ? "Zakończ edycję nazw stref" : "Edytuj nazwy stref"}</span>
+              </div>
+            </div>
+            <div class="row${zoneEditMode ? ' zone-editing' : ''}" id="zone-buttons"></div>
+          </section>
+        `;
+        document.getElementById('main-content').innerHTML = html;
+        let row = document.getElementById('zone-buttons');
+        zones.forEach((z, idx) => {
+          let name = zoneNames[idx] || `Strefa ${z.id+1}`;
+          let col = document.createElement('div');
+          col.className = 'col-6 col-md-3 mb-3';
+          let btn = document.createElement('button');
+          btn.className = 'zone-btn btn w-100 ' + (z.active ? 'zone-on' : 'zone-off') + ' position-relative';
+          btn.type = 'button';
+          btn.onclick = () => { if (!zoneEditMode) toggleZone(z.id); };
+
+          if (lastZoneStates[idx] !== undefined && lastZoneStates[idx] !== z.active) {
+            btn.classList.add('zone-btn-animate');
+            setTimeout(() => {
+              btn.classList.remove('zone-btn-animate');
+            }, 500);
+          }
+          setTimeout(() => { lastZoneStates[idx] = z.active; }, 10);
+
+          let icon = document.createElement('i');
+          icon.className = 'bi bi-valve';
+          icon.style.marginRight = "0.2em";
+          btn.appendChild(icon);
+
+          if (z.active && z.time_left > 0) {
+            let timer = document.createElement('span');
+            timer.className = "zone-timer-badge";
+            timer.id = `zone-timer-${z.id}`;
+            timer.innerText = formatSeconds(z.time_left);
+            btn.appendChild(timer);
+
+            let sec = z.time_left;
+            const interval = setInterval(() => {
+              sec--;
+              if (sec <= 0) {
+                timer.textContent = "Zakończono";
+                timer.className = "zone-timer-badge zone-timer-finished-badge";
+                clearInterval(interval);
+                setTimeout(() => {
+                  if (timer.parentNode) timer.remove();
+                  afterLoad_zones();
+                }, 4000);
+              } else {
+                timer.textContent = formatSeconds(sec);
+              }
+            }, 1000);
+            zoneCountdownIntervals.push(interval);
+          }
+
+          let nameSpan = document.createElement('span');
+          nameSpan.className = "zone-name";
+          nameSpan.innerText = name;
+          setFontSizeToFit(nameSpan);
+          btn.appendChild(nameSpan);
+
+          btn.appendChild(document.createElement('br'));
+          let statusSpan = document.createElement('span');
+          statusSpan.className = "fw-bold";
+          statusSpan.innerText = z.active ? "Aktywna" : "Wyłączona";
+          btn.appendChild(statusSpan);
+
+          col.appendChild(btn);
+
+          if (zoneEditMode) {
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.value = name;
+            input.maxLength = 24;
+            input.className = 'zone-edit-input';
+            input.style.textAlign = "center";
+            input.oninput = () => setFontSizeToFit(input);
+            setFontSizeToFit(input);
+            col.appendChild(input);
+          }
+          row.appendChild(col);
+        });
+      });
+    }
+
+    function formatSeconds(s) {
+      const m = Math.floor(s / 60);
+      const ss = s % 60;
+      return `${m}:${ss < 10 ? "0" : ""}${ss}`;
+    }
+    function toggleZone(idx) {
+      if (zoneEditMode) return;
+      api('/api/zones', 'POST', { id: idx, toggle: true }).then(() => {
+        afterLoad_zones();
+      });
+    }
+
+    function afterLoad_weather() {
+      api('/api/weather').then(w => {
+        document.getElementById('main-content').innerHTML = `
+          <section id="weather" class="tab-section mb-5">
+            <h3><i class="bi bi-cloud-sun"></i> Pogoda</h3>
+            <div class="row g-4">
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <img src="https://openweathermap.org/img/wn/${w.icon || '01d'}@4x.png" alt="Ikona pogody" style="height: 64px;">
+                  <div class="fs-5 mt-2">${w.weather_desc || "---"}</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-thermometer-half" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.temp !== undefined ? w.temp + "°C" : "---"}</div>
+                  <div class="small text-muted">
+                    Odczuwalna: ${w.feels_like !== undefined ? w.feels_like + "°C" : "---"}
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-droplet" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.humidity !== undefined ? w.humidity + "%" : "---"}</div>
+                  <div class="small text-muted">Wilgotność</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-speedometer2" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.pressure !== undefined ? w.pressure + " hPa" : "---"}</div>
+                  <div class="small text-muted">Ciśnienie</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-wind" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.wind !== undefined ? w.wind + " m/s" : "---"}</div>
+                  <div class="small text-muted">
+                    Kierunek: ${w.wind_deg !== undefined ? w.wind_deg + "°" : "---"}
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-cloud" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.clouds !== undefined ? w.clouds + "%" : "---"}</div>
+                  <div class="small text-muted">Zachmurzenie</div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-4 mt-1">
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-eye" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.visibility !== undefined ? (w.visibility/1000).toFixed(1) + " km" : "---"}</div>
+                  <div class="small text-muted">Widoczność</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-cloud-rain-heavy" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.rain !== undefined ? w.rain + " mm" : "0 mm"}</div>
+                  <div class="small text-muted">Opad (ostatnia godz.)</div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="status-tile text-center">
+                  <i class="bi bi-cloud-drizzle" style="font-size:2em;"></i>
+                  <div class="fs-6">Prognoza opadów:</div>
+                  <div class="fs-6">
+                    1h: ${w.rain_1h_forecast !== undefined ? w.rain_1h_forecast + " mm" : "---"}, 
+                    6h: ${w.rain_6h_forecast !== undefined ? w.rain_6h_forecast + " mm" : "---"}
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-sunrise" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.sunrise || "---"}</div>
+                  <div class="small text-muted">Wschód słońca</div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="status-tile text-center">
+                  <i class="bi bi-sunset" style="font-size:2em;"></i>
+                  <div class="fs-3">${w.sunset || "---"}</div>
+                  <div class="small text-muted">Zachód słońca</div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="status-tile text-center">
+                  <i class="bi bi-thermometer-low" style="font-size:2em;"></i>
+                  <div class="fs-6">Min/max dziś: 
+                    ${w.temp_min !== undefined ? w.temp_min + "°C" : "---"} / 
+                    ${w.temp_max !== undefined ? w.temp_max + "°C" : "---"}
+                  </div>
+                  <div class="fs-6 mt-1">Jutro: 
+                    ${w.temp_min_tomorrow !== undefined ? w.temp_min_tomorrow + "°C" : "---"} / 
+                    ${w.temp_max_tomorrow !== undefined ? w.temp_max_tomorrow + "°C" : "---"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        `;
+      });
+    }
+
+    function afterLoad_logs() {
+      api('/api/logs').then(d => {
+document.getElementById('main-content').innerHTML = `
+  <section id="logs" class="tab-section mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 class="mb-0"><i class="bi bi-clipboard-data"></i> Logi</h3>
+      <button class="btn btn-outline-danger btn-sm" onclick="clearLogs()">
+        <i class="bi bi-trash"></i> Wyczyść logi
+      </button>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <div class="status-tile" style="min-height: 120px;">
+          <pre id="log-box" style="background: #f3f5f8; border-radius: .5em; padding: .5em 1em; font-size: 1em; max-height: 220px; overflow-y: auto;">${(d.logs || []).slice().reverse().join('\n')}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+`;
+      });
+    }
+
+    function clearLogs() {
+      api('/api/logs', 'DELETE').then(afterLoad_logs);
+    }
+
+    function afterLoad_settings() {
+      api('/api/settings').then(s => {
+        document.getElementById('main-content').innerHTML = `
+          <section id="settings" class="tab-section mb-5">
+            <h3><i class="bi bi-gear"></i> Ustawienia</h3>
+            <form id="settings-form" class="row g-3 col-md-8">
+              <div class="col-md-6">
+                <label for="ssid">SSID WiFi</label>
+                <input class="form-control" type="text" id="ssid" required>
+              </div>
+              <div class="col-md-6">
+                <label for="pass">Hasło WiFi</label>
+                <input class="form-control" type="password" id="pass" required>
+              </div>
+              <div class="col-md-6">
+                <label for="owmApiKey">Klucz API OpenWeatherMap</label>
+                <input class="form-control" type="text" id="owmApiKey" required>
+              </div>
+              <div class="col-md-6">
+                <label for="owmLocation">Lokalizacja (np. Warsaw,PL)</label>
+                <input class="form-control" type="text" id="owmLocation" required>
+              </div>
+              <div class="col-md-6">
+                <label for="pushoverUser">Pushover User Key</label>
+                <input class="form-control" type="text" id="pushoverUser">
+              </div>
+              <div class="col-md-6">
+                <label for="pushoverToken">Pushover API Token</label>
+                <input class="form-control" type="text" id="pushoverToken">
+              </div>
+              <div class="col-md-6">
+                <label for="timezone">Strefa czasowa</label>
+                <select class="form-control" id="timezone" required>
+                  <option value="Europe/Warsaw">Europa/Polska (Warszawa)</option>
+                  <option value="Europe/Berlin">Europa (Berlin)</option>
+                  <option value="Europe/Paris">Europa (Paryż)</option>
+                  <option value="Europe/London">Europa (Londyn)</option>
+                  <option value="Europe/Moscow">Europa (Moskwa)</option>
+                  <option value="America/New_York">Ameryka (Nowy Jork)</option>
+                  <option value="America/Chicago">Ameryka (Chicago)</option>
+                  <option value="America/Denver">Ameryka (Denver)</option>
+                  <option value="America/Los_Angeles">Ameryka (Los Angeles)</option>
+                  <option value="Asia/Tokyo">Azja (Tokio)</option>
+                  <option value="Asia/Shanghai">Azja (Szanghaj)</option>
+                  <option value="UTC">UTC (uniwersalny)</option>
+                </select>
+              </div>
+              <div class="col-12"><hr></div>
+              <h5 class="mb-3 mt-0"><i class="bi bi-broadcast-pin"></i> MQTT (Home Assistant)</h5>
+              <div class="col-md-4">
+                <label for="mqttServer">MQTT broker (host/IP)</label>
+                <input class="form-control" type="text" id="mqttServer">
+              </div>
+              <div class="col-md-2">
+                <label for="mqttPort">Port</label>
+                <input class="form-control" type="number" id="mqttPort" min="1" max="65535">
+              </div>
+              <div class="col-md-3">
+                <label for="mqttUser">Login</label>
+                <input class="form-control" type="text" id="mqttUser">
+              </div>
+              <div class="col-md-3">
+                <label for="mqttPass">Hasło</label>
+                <input class="form-control" type="password" id="mqttPass">
+              </div>
+              <div class="col-md-6">
+                <label for="mqttClientId">MQTT Client ID</label>
+                <input class="form-control" type="text" id="mqttClientId" placeholder="opcjonalnie">
+              </div>
+              <div class="col-12 mt-3">
+                <button type="submit" class="btn btn-success">Zapisz ustawienia</button>
+              </div>
+              <div class="col-12">
+                <div id="settings-msg" class="mt-2 text-success"></div>
+              </div>
+              <div class="col-12 mt-4">
+                <button class="btn btn-primary" id="ota-btn" type="button">
+                  <i class="bi bi-upload"></i> Wgraj firmware
+                </button>
+              </div>
+            </form>
+          </section>
+        `;
+        document.getElementById('ssid').value = s.ssid || '';
+        document.getElementById('pass').value = s.pass || '';
+        document.getElementById('owmApiKey').value = s.owmApiKey || '';
+        document.getElementById('owmLocation').value = s.owmLocation || '';
+        document.getElementById('pushoverUser').value = s.pushoverUser || '';
+        document.getElementById('pushoverToken').value = s.pushoverToken || '';
+        document.getElementById('timezone').value = s.timezone || 'Europe/Warsaw';
+        document.getElementById('mqttServer').value = s.mqttServer || '';
+        document.getElementById('mqttPort').value = s.mqttPort || 1883;
+        document.getElementById('mqttUser').value = s.mqttUser || '';
+        document.getElementById('mqttPass').value = s.mqttPass || '';
+        document.getElementById('mqttClientId').value = s.mqttClientId || '';
+        document.getElementById('settings-msg').textContent = "";
+
+        document.getElementById('settings-form').onsubmit = function(e) {
+          e.preventDefault();
+          let msg = document.getElementById('settings-msg');
+          msg.textContent = "Zapisywanie...";
+          api('/api/settings', 'POST', {
+            ssid: document.getElementById('ssid').value,
+            pass: document.getElementById('pass').value,
+            owmApiKey: document.getElementById('owmApiKey').value,
+            owmLocation: document.getElementById('owmLocation').value,
+            pushoverUser: document.getElementById('pushoverUser').value,
+            pushoverToken: document.getElementById('pushoverToken').value,
+            timezone: document.getElementById('timezone').value,
+            mqttServer: document.getElementById('mqttServer').value,
+            mqttPort: parseInt(document.getElementById('mqttPort').value),
+            mqttUser: document.getElementById('mqttUser').value,
+            mqttPass: document.getElementById('mqttPass').value,
+            mqttClientId: document.getElementById('mqttClientId').value
+          }).then(() => {
+            msg.textContent = "Ustawienia zapisane! Jeśli zmieniłeś MQTT lub strefę czasową, zostanie ona użyta po restarcie.";
+          });
+        };
+
+        const otaBtn = document.getElementById('ota-btn');
+        if(otaBtn) {
+          otaBtn.onclick = function() {
+            var modal = new bootstrap.Modal(document.getElementById('otaModal'));
+            document.getElementById('ota-upload-form').reset();
+            document.getElementById('ota-msg').textContent = "";
+            document.getElementById('ota-msg').className = "mb-2";
+            modal.show();
+          };
+        }
+        const otaForm = document.getElementById('ota-upload-form');
+        if(otaForm) {
+          otaForm.onsubmit = function(e) {
+            e.preventDefault();
+            const login = document.getElementById('ota-login').value;
+            const pass = document.getElementById('ota-pass').value;
+            const file = document.getElementById('ota-file').files[0];
+            const msgBox = document.getElementById('ota-msg');
+            if (!login || !pass || !file) {
+              msgBox.className = "mb-2 text-danger";
+              msgBox.textContent = "Uzupełnij wszystkie pola.";
+              return;
+            }
+            msgBox.className = "mb-2 text-info";
+            msgBox.textContent = "Wysyłanie...";
+            const formData = new FormData();
+            formData.append('login', login);
+            formData.append('pass', pass);
+            formData.append('firmware', file);
+
+            fetch('/api/ota', {
+              method: 'POST',
+              body: formData
+            }).then(async resp => {
+              if (resp.ok) {
+                msgBox.className = "mb-2 text-success";
+                msgBox.textContent = "Firmware wgrany! Trwa restart urządzenia...";
+                setTimeout(() => window.location.reload(), 8000);
+              } else {
+                const err = await resp.text();
+                msgBox.className = "mb-2 text-danger";
+                msgBox.textContent = "Błąd: " + err;
+              }
+            }).catch(err => {
+              msgBox.className = "mb-2 text-danger";
+              msgBox.textContent = "Błąd sieci: " + err;
+            });
+          };
+        }
+      });
+    }
+
+    function afterLoad_programs() {
+      api('/api/programs').then(programs => {
+        let html = `
+          <section id="programs" class="tab-section mb-5">
+            <h3><i class="bi bi-calendar-week"></i> Harmonogramy</h3>
+            <form id="program-add-form" class="row g-2 align-items-end mb-4">
+              <div class="col-auto">
+                <label for="prog-zone">Strefa</label>
+                <select id="prog-zone" class="form-select">
+                  <option value="0">1</option><option value="1">2</option>
+                  <option value="2">3</option><option value="3">4</option>
+                  <option value="4">5</option><option value="5">6</option>
+                  <option value="6">7</option><option value="7">8</option>
+                </select>
+              </div>
+              <div class="col-auto">
+                <label for="prog-time">Godzina</label>
+                <input type="time" class="form-control" id="prog-time" required>
+              </div>
+              <div class="col-auto">
+                <label for="prog-duration">Czas (min)</label>
+                <input type="number" class="form-control" id="prog-duration" min="1" max="120" value="10" required>
+              </div>
+              <div class="col-auto">
+                <label>Dni tygodnia</label>
+                <div id="prog-days-btns" class="btn-group" role="group" aria-label="Dni tygodnia">
+                  <button type="button" class="btn btn-outline-secondary" data-day="1">Pn</button>
+                  <button type="button" class="btn btn-outline-secondary" data-day="2">Wt</button>
+                  <button type="button" class="btn btn-outline-secondary" data-day="3">Śr</button>
+                  <button type="button" class="btn btn-outline-secondary" data-day="4">Cz</button>
+                  <button type="button" class="btn btn-outline-secondary" data-day="5">Pt</button>
+                  <button type="button" class="btn btn-outline-secondary" data-day="6">Sb</button>
+                  <button type="button" class="btn btn-outline-secondary" data-day="0">Nd</button>
+                </div>
+                <input type="hidden" id="prog-days" value="">
+              </div>
+              <div class="col-auto">
+                <button type="submit" class="btn btn-success">Dodaj</button>
+              </div>
+            </form>
+            <div id="program-list"></div>
+          </section>
+        `;
+        let listHtml = '';
+        if (programs.length === 0) {
+          listHtml = `<div class="alert alert-secondary mt-2">Brak zaplanowanych harmonogramów.</div>`;
+        } else {
+          listHtml = '<ul class="list-group mb-3">';
+          programs.forEach((p, idx) => {
+            let days = Array.isArray(p.days)
+              ? p.days.map(d => ["Nd","Pn","Wt","Śr","Cz","Pt","Sb"][d]).join(', ')
+              : p.days;
+            listHtml += `
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <b>Strefa:</b> ${parseInt(p.zone)+1}
+                  <b>Godzina:</b> ${p.time}
+                  <b>Czas:</b> ${p.duration} min
+                  <b>Dni:</b> ${days}
+                </div>
+                <button class="btn btn-sm btn-danger" onclick="deleteProgram(${idx})">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </li>
+            `;
+          });
+          listHtml += '</ul>';
+        }
+        document.getElementById('main-content').innerHTML = html;
+        document.getElementById('program-list').innerHTML = listHtml;
+
+        // Obsługa formularza i zaznaczania dni
+        const daysBtns = document.querySelectorAll('#prog-days-btns button');
+        const daysHidden = document.getElementById('prog-days');
+        let selectedDays = [];
+        daysBtns.forEach(btn => {
+          btn.classList.remove('active');
+          btn.onclick = function() {
+            const day = parseInt(this.dataset.day);
+            if (selectedDays.includes(day)) {
+              selectedDays = selectedDays.filter(d => d !== day);
+              this.classList.remove('active');
+            } else {
+              selectedDays.push(day);
+              this.classList.add('active');
+            }
+            selectedDays.sort();
+            daysHidden.value = selectedDays.join(',');
+          }
+        });
+        const form = document.getElementById('program-add-form');
+        if(form) {
+          form.onsubmit = function(e) {
+            e.preventDefault();
+            const zone = parseInt(document.getElementById('prog-zone').value);
+            const time = document.getElementById('prog-time').value;
+            const duration = parseInt(document.getElementById('prog-duration').value);
+            const days = daysHidden.value
+              .split(',')
+              .map(x=>parseInt(x))
+              .filter(x=>!isNaN(x));
+            if (!time || !duration || days.length === 0) {
+              alert("Uzupełnij wszystkie pola i wybierz co najmniej jeden dzień.");
+              return;
+            }
+            api('/api/programs', 'POST', {
+              zone: zone,
+              time: time,
+              duration: duration,
+              days: days
+            }).then(() => {
+               setTimeout(() => {
+               afterLoad_programs();
+            }, 400); // lekka zwłoka
+             form.reset();
+             selectedDays = [];
+            daysBtns.forEach(btn => btn.classList.remove('active'));
+            daysHidden.value = '';
+          });
+          }
+        }
+      });
+    }
+
+function deleteProgram(idx) {
+  api('/api/programs?id=' + idx, 'DELETE').then(() => {
+    setTimeout(() => {
+      afterLoad_programs();
+    }, 400);
+  });
+}
+
+    // Mini status/pogoda
+    function loadStatus() {
+      api('/api/status').then(d => {
+        document.getElementById('wifi-status').innerText = d.wifi;
+        document.getElementById('ip-addr').innerText = d.ip;
+        document.getElementById('time-now').innerText = d.time;
+      });
+    }
+    function loadWeatherMini() {
+      api('/api/weather').then(w => {
+        document.getElementById('rain-amount').innerText = w.rain;
+        document.getElementById('humidity').innerText = w.humidity;
+        document.getElementById('temperature').innerText = w.temp;
+      });
+    }
+
+    // Obsługa tabów
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.tab-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          document.querySelectorAll('.tab-link').forEach(a=>a.classList.remove('active'));
+          this.classList.add('active');
+          startSectionAutoRefresh(this.dataset.section);
+        });
+      });
+      startSectionAutoRefresh('zones');
+      loadStatus();
+      loadWeatherMini();
+    });
+</script>
+  <div id="footer-brand" style="
+    position: fixed;
+    right: 18px;
+    bottom: 10px;
+    z-index: 999;
+    font-size: 0.9em;
+    color: #000;
+    opacity: 0.9;
+    pointer-events: none;
+    font-family: inherit;">
+    2025 PaweMed v1.2.1
+  </div>
+</body>
+</html>
